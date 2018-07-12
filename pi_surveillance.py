@@ -12,8 +12,9 @@ import datetime
 import json
 import time
 import cv2
+import pathlib
 
-SYNC_PATH = "/home/pi/rpi-sync/security/"
+SYNC_PATH = pathlib.Path("/home/pi/rpi-sync/security/")
 
 conf = {
 	"min_upload_seconds": 0.5,
@@ -105,7 +106,11 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	# check to see if the room is occupied
 	if text == "Occupied":
                 # save occupied frame
-                image_path = SYNC_PATH + "{}_{}.jpg".format(timestamp, motionCounter)
+				date_str = timestamp.strftime("%Y-%m-%d")
+				date_dir = SYNC_PATH / date_str
+				date_dir.mkdir(parents=True, exist_ok=True)
+                image_path = date_dir / "{}_{}.jpg".format(timestamp, motionCounter)
+
                 cv2.imwrite(image_path, frame)
                 print("[INFO] Found movement!! Writing to", image_path)
 
