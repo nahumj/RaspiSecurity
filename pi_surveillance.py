@@ -15,13 +15,6 @@ import cv2
 
 SYNC_PATH = "/home/pi/rip-sync/security"
 
-# set debug mode on 
-if args['debug']:
-	print(' > Debug mode is on !')
-	debug_mode = True
-else:
-	debug_mode = False
-
 # check to see if the Dropbox should be used
 if conf["use_dropbox"]:
 	# connect to dropbox and start the session authorization process
