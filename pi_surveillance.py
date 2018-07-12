@@ -38,6 +38,7 @@ rawCapture = PiRGBArray(camera, size=tuple(conf["resolution"]))
 print("[INFO] warming up...")
 time.sleep(conf["camera_warmup_time"])
 avg = None
+avg_recorded_time = datetime.datetime.now()
 lastUploaded = datetime.datetime.now()
 motionCounter = 0
 print('[INFO] talking raspi started !!')
@@ -59,9 +60,10 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	gray = cv2.GaussianBlur(gray, tuple(conf['blur_size']), 0)
 
 	# if the average frame is None, initialize it
-	if avg is None:
-		print("[INFO] starting background model...")
+	if avg is None or (avg_recorded_time - datetime.datetime.now() > datetime.timedelta(hours=1)):
+		print("[INFO] recording background")
 		avg = gray.copy().astype("float")
+		avg_recorded_time = datetime.datetime.now()
 		rawCapture.truncate(0)
 		continue
 
