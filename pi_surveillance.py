@@ -93,8 +93,8 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 
 	# draw the text and timestamp on the frame
 	ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
-	cv2.putText(frame, "Room Status: {}".format(text), (10, 20),
-		cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+	# cv2.putText(frame, "Room Status: {}".format(text), (10, 20),
+	# 	cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 	cv2.putText(frame, ts, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX,
 		0.35, (0, 0, 255), 1)
 
@@ -106,12 +106,12 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	# check to see if the room is occupied
 	if text == "Occupied":
                 # save occupied frame
-				date_str = timestamp.strftime("%Y-%m-%d")
-				date_dir = SYNC_PATH / date_str
-				date_dir.mkdir(parents=True, exist_ok=True)
+                date_str = timestamp.strftime("%Y-%m-%d")
+                date_dir = SYNC_PATH / date_str
+                date_dir.mkdir(parents=True, exist_ok=True)
                 image_path = date_dir / "{}_{}.jpg".format(timestamp, motionCounter)
 
-                cv2.imwrite(image_path, frame)
+                cv2.imwrite(str(image_path), frame)
                 print("[INFO] Found movement!! Writing to", image_path)
 
                 # check to see if enough time has passed between uploads
