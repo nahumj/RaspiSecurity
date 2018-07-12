@@ -13,19 +13,18 @@ import json
 import time
 import cv2
 
-SYNC_PATH = "/home/pi/rip-sync/security"
+SYNC_PATH = "/home/pi/rip-sync/security/"
 
-# check to see if the Dropbox should be used
-if conf["use_dropbox"]:
-	# connect to dropbox and start the session authorization process
-	flow = DropboxOAuth2FlowNoRedirect(conf["dropbox_key"], conf["dropbox_secret"])
-	print("[INFO] Authorize this application: {}".format(flow.start()))
-	authCode = raw_input("Enter auth code here: ").strip()
-
-	# finish the authorization and grab the Dropbox client
-	(accessToken, userID) = flow.finish(authCode)
-	client = DropboxClient(accessToken)
-	print("[SUCCESS] dropbox account linked")
+conf = {
+	"min_upload_seconds": 0.5,
+	"min_motion_frames": 8,
+	"camera_warmup_time": 10,
+	"delta_thresh": 5,
+	"blur_size": [21, 21], 
+	"resolution": [640, 480],
+	"fps": 16,
+	"min_area": 5000,
+}
 
 # initialize the camera and grab a reference to the raw camera capture
 camera = PiCamera()
@@ -106,7 +105,8 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	# check to see if the room is occupied
 	if text == "Occupied":
                 # save occupied frame
-                cv2.imwrite("/tmp/talkingraspi_{}.jpg".format(motionCounter), frame);
+				path = SYNC_PATH + "{}_{}.jpg".format(timestamp, motionCounter)
+                cv2.imwrite(path, frame);
 
                 # check to see if enough time has passed between uploads
                 if (timestamp - lastUploaded).seconds >= conf["min_upload_seconds"]:
@@ -117,25 +117,7 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
                         # check to see if the number of frames with consistent motion is
                         # high enough
                         if motionCounter >= int(conf["min_motion_frames"]):
-                                # check to see if dropbox sohuld be used
-                                if conf["use_dropbox"]:
-                                        # write the image to temporary file
-                                        t = TempImage()
-                                        cv2.imwrite(t.path, frame)
-                                        # upload the image to Dropbox and cleanup the tempory image
-                                        print("[UPLOAD] {}".format(ts))
-                                        path = "{base_path}/{timestamp}.jpg".format(
-                                                base_path=conf["dropbox_base_path"], timestamp=ts)
-                                        client.put_file(path, open(t.path, "rb"))
-                                        t.cleanup()
-
-                                # send an email if enabled
-                                if conf["use_email"]:
-                                        print("[INFO] Sending an alert email!!!")
-                                        send_email(conf)
-                                        print("[INFO] waiting {} seconds...".format(conf["camera_warmup_time"]))
-                                        time.sleep(conf["camera_warmup_time"])
-                                        print("[INFO] running")
+                                
 
                                 # update the last uploaded timestamp and reset the motion
                                 # counter
@@ -145,20 +127,6 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	# otherwise, the room is not occupied
 	else:
 		motionCounter = 0
-
-	# check to see if the frames should be displayed to screen
-	if conf["show_video"]:
-		# display the security feed
-		cv2.imshow("Security Feed", frame)
-		key = cv2.waitKey(1) & 0xFF
-
-		if debug_mode:
-			cv2.imshow('Debug blurred gray frame', gray)
-			cv2.imshow('Debug threshold frame', thresh)
-
-		# if the `q` key is pressed, break from the lop
-		if key == ord("q"):
-			break
 
 	# clear the stream in preparation for the next frame
 	rawCapture.truncate(0)
