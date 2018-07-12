@@ -13,7 +13,7 @@ import json
 import time
 import cv2
 
-SYNC_PATH = "/home/pi/rip-sync/security/"
+SYNC_PATH = "/home/pi/rpi-sync/security/"
 
 conf = {
 	"min_upload_seconds": 0.5,
@@ -105,8 +105,9 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	# check to see if the room is occupied
 	if text == "Occupied":
                 # save occupied frame
-				path = SYNC_PATH + "{}_{}.jpg".format(timestamp, motionCounter)
-                cv2.imwrite(path, frame)
+                image_path = SYNC_PATH + "{}_{}.jpg".format(timestamp, motionCounter)
+                cv2.imwrite(image_path, frame)
+                print("[INFO] Found movement!! Writing to", image_path)
 
                 # check to see if enough time has passed between uploads
                 if (timestamp - lastUploaded).seconds >= conf["min_upload_seconds"]:
