@@ -106,7 +106,7 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	if text == "Occupied":
                 # save occupied frame
 				path = SYNC_PATH + "{}_{}.jpg".format(timestamp, motionCounter)
-                cv2.imwrite(path, frame);
+                cv2.imwrite(path, frame)
 
                 # check to see if enough time has passed between uploads
                 if (timestamp - lastUploaded).seconds >= conf["min_upload_seconds"]:
