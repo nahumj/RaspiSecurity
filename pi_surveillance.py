@@ -38,7 +38,6 @@ rawCapture = PiRGBArray(camera, size=tuple(conf["resolution"]))
 print("[INFO] warming up...")
 time.sleep(conf["camera_warmup_time"])
 avg = None
-avg_recorded_time = datetime.datetime.now()
 lastUploaded = datetime.datetime.now()
 motionCounter = 0
 print('[INFO] talking raspi started !!')
@@ -49,7 +48,7 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	# the timestamp and occupied/unoccupied text
 	frame = f.array
 	timestamp = datetime.datetime.now()
-	text = "Unoccupied"
+	found_motion = False
 
 	######################################################################
 	# COMPUTER VISION
@@ -60,7 +59,7 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	gray = cv2.GaussianBlur(gray, tuple(conf['blur_size']), 0)
 
 	# if the average frame is None, initialize it
-	if avg is None or (avg_recorded_time - datetime.datetime.now() > datetime.timedelta(hours=1)):
+	if avg is None:
 		print("[INFO] recording background")
 		avg = gray.copy().astype("float")
 		avg_recorded_time = datetime.datetime.now()
@@ -91,7 +90,7 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 		# and update the text
 		(x, y, w, h) = cv2.boundingRect(c)
 		cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-		text = "Occupied"
+		found_motion = True
 
 	# draw the text and timestamp on the frame
 	ts = timestamp.strftime("%A %d %B %Y %I:%M:%S%p")
@@ -106,35 +105,15 @@ for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True
 	###################################################################################
 
 	# check to see if the room is occupied
-	if text == "Occupied":
-                # save occupied frame
-                date_str = timestamp.strftime("%Y-%m-%d")
-                date_dir = SYNC_PATH / date_str
-                date_dir.mkdir(parents=True, exist_ok=True)
-                image_path = date_dir / "{}_{}.jpg".format(timestamp, motionCounter)
+	if found_motion:
+		# save occupied frame
+		date_str = timestamp.strftime("%Y-%m-%d")
+		date_dir = SYNC_PATH / date_str
+		date_dir.mkdir(parents=True, exist_ok=True)
+		image_path = date_dir / "{}_{}.jpg".format(timestamp, motionCounter)
 
-                cv2.imwrite(str(image_path), frame)
-                print("[INFO] Found movement!! Writing to", image_path)
-
-                # check to see if enough time has passed between uploads
-                if (timestamp - lastUploaded).seconds >= conf["min_upload_seconds"]:
-
-                        # increment the motion counter
-                        motionCounter += 1;
-
-                        # check to see if the number of frames with consistent motion is
-                        # high enough
-                        if motionCounter >= int(conf["min_motion_frames"]):
-                                
-
-                                # update the last uploaded timestamp and reset the motion
-                                # counter
-                                lastUploaded = timestamp
-                                motionCounter = 0
-
-	# otherwise, the room is not occupied
-	else:
-		motionCounter = 0
+		cv2.imwrite(str(image_path), frame)
+		print("[INFO] Found movement!! Wrote to", image_path)
 
 	# clear the stream in preparation for the next frame
 	rawCapture.truncate(0)
